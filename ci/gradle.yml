@@ -26,6 +26,18 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@4137be6a8bf7d7133955359dbd952c0ca73b1021
+      uses: gradle/gradle-build-action@v2
+      - id: gradle
+      run: ./gradlew build
+    - name: "Comment build scan url"
+      uses: actions/github-script@v5
+      if: github.event_name == 'pull_request' && failure()
       with:
-        arguments: build
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '❌ ${{ github.workflow }} failed: ${{ steps.gradle.outputs.build-scan-url }}'
+          })
